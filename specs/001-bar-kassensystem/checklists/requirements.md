@@ -34,18 +34,23 @@
 ## Compliance Coverage (KassenSichV / GoBD / AO)
 
 - [x] Einzelaufzeichnungspflicht (§ 146 AO): FR-001
-- [x] TSE-Pflicht (§ 146a AO, KassenSichV): FR-006
-- [x] Belegausgabepflicht (§ 146a AO): FR-011
-- [x] Z-Bon Pflichtangaben: FR-012
-- [x] Unveränderbarkeit / GoBD: FR-003, FR-009, FR-010
-- [x] 10-Jahres-Aufbewahrung: FR-009
-- [x] Meldepflicht ELSTER: FR-008
-- [x] Kassennachschau / Datenzugriff: FR-007
-- [x] Bedienerkennung: FR-017
-- [x] Verfahrensdokumentation: Key Entities (Verfahrensdokumentation)
-- [x] Trainee-Buchungen auf Z-Bon: FR-018
+- [x] TSE-Pflicht (§ 146a AO, KassenSichV): FR-005, FR-006
+- [x] TSE-Offline-Puffer: FR-007
+- [x] Belegausgabepflicht (§ 146a AO): FR-008, FR-009
+- [x] Z-Bon Pflichtangaben: FR-010
+- [x] Trainee-Buchungen auf Z-Bon: FR-011
+- [x] Unveränderbarkeit / GoBD: FR-003, FR-012
+- [x] 10-Jahres-Aufbewahrung: FR-012
+- [x] DSFinV-K-Export / Kassennachschau: FR-013, FR-014
+- [x] Meldepflicht (§ 146a Abs. 4 AO): FR-015
+- [x] Verfahrensdokumentation (GoBD Tz. 10.1): FR-016
+- [x] Bedienerkennung: FR-017, FR-018
+- [x] Buchungsabbrüche unzulässig: FR-004
+- [x] Geldwäschegesetz (>10.000 €): FR-023
 
 ## Notes
 
-- TSE-Lösung festgelegt: **Deutsche Fiskal Cloud-TSE**.
-- Spec ist vollständig und bereit für `/plan`.
+- TSE-Lösung festgelegt: **Deutsche Fiskal Cloud-TSE** (BSI TR-03153 zertifiziert).
+- Scope: Einzel-Tablet-Betrieb (1 Kassenplatz); Mehrplatz außerhalb V1.
+- Gesetzesstand: KassenSichV, GoBD, AO zum 2026-02-25.
+- Spec vollständig befüllt — bereit für `/plan`.
