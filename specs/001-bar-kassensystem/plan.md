@@ -36,7 +36,7 @@ Build a fully KassenSichV/GoBD/AO-compliant bar POS (Kassensystem) as a touch-op
 | Atomic transactions | Room `@Transaction` wraps every Transaktion + Positionen save |
 | Integer cents only | All `Betrag` fields are `Long` (Eurocent); no `Float`/`Double` anywhere in domain |
 | UTC internally, Europe/Berlin for display | `Instant` in DB; `ZonedDateTime(Europe/Berlin)` for bon output |
-| Hardware behind interfaces | `BonDrucker`, `TseClient`, `CashDrawer` are interfaces; concrete adapters in `data/hardware/` |
+| Hardware behind interfaces | `IBonDrucker`, `TseClient` are interfaces in `domain/repository/`; concrete adapters (`BonDruckerImpl`, `TseClientImpl`) in `data/hardware/` |
 | Offline-first | TseOfflineBuffer + WorkManager; data never lost if TSE unreachable |
 | `allowBackup=false` | Protects GoBD immutability; DSFinV-K export is the archival mechanism |
 
@@ -66,7 +66,7 @@ android/                              ← Android Gradle project root
 │       │       ├── KassenApp.kt              ← Application class (Hilt)
 │       │       ├── data/
 │       │       │   ├── db/
-│       │       │   │   ├── KassenDatabase.kt  ← Room DB (WAL, 12 entities)
+│       │       │   │   ├── KassenDatabase.kt  ← Room DB (WAL, 13 entities)
 │       │       │   │   ├── entity/            ← Room @Entity classes
 │       │       │   │   ├── dao/               ← Room @Dao interfaces
 │       │       │   │   └── converter/         ← TypeConverters (Instant, JSON)
@@ -113,7 +113,7 @@ UI layer          ← Jetpack Compose screens + ViewModels (using StateFlow)
     ↓ calls
 Domain layer      ← Use cases + repository interfaces + domain models + PreisregelEngine
     ↑ implemented by
-Data layer        ← Room DAOs, repository impls, TseClientImpl, BonDrucker, Workers
+Data layer        ← Room DAOs, repository impls, TseClientImpl, BonDruckerImpl, Workers
 ```
 
 - ViewModels hold `StateFlow<UiState>` — no `LiveData`, no mutable state in Composables.
@@ -121,7 +121,7 @@ Data layer        ← Room DAOs, repository impls, TseClientImpl, BonDrucker, Wo
 - All monetary arithmetic is `Long` (cents). Rounding: `HALF_UP` at display time only.
 - `Transaktion.locked = true` after Z-Bon — enforced at repository level (throws if write attempted).
 
-## Data Model (12 Entities + 1 Archive)
+## Data Model (13 Entities + 1 Archive)
 
 | Entity | Key Fields | Relations |
 |--------|-----------|-----------|
@@ -130,13 +130,14 @@ Data layer        ← Room DAOs, repository impls, TseClientImpl, BonDrucker, Wo
 | `Preisregel` | id, startTime, endTime, weekdays, discountType, filter | — |
 | `Tisch` | id, bezeichnung, status, version | → Transaktion |
 | `Bediener` | id, name, pinHash, rolle, isTraining | — |
-| `Schicht` | id, bedienerid, startZeit, endZeit | → Bediener |
+| `Schicht` | id, bedienerid, startZeit, endZeit, sollBestandInCent, istBestandInCent | → Bediener |
 | `Transaktion` | id, tischId, bedienerid, schichtId, status, locked, isTraining | → Positionen, Bon |
 | `TransaktionsPosition` | id, transaktionId, skuId, menge, preisInCent, mwstSatz | → Transaktion, SKU |
 | `Bon` | id, transaktionId, zeitstempel, tseSignatur, tseSerial, tseZeitpunkt, tseTxNummer, isNachdruck | → Transaktion |
-| `ZBon` | id, nummer, vonZeit, bisZeit, gesamtInCent, mwst7, mwst19, anzahlBuchungen, anzahlStornos, bedienerid, tseSignatur | — |
+| `ZBon` | id, nummer, vonZeit, bisZeit, gesamtInCent, mwst7, mwst19, entnahmenInCent, anzahlBuchungen, anzahlStornos, bedienerid, tseSignatur | — |
 | `TseProtokollEintrag` | id, transaktionId, typ, tseSerial, signatur, zeitstempel, txNummer | → Transaktion |
 | `Verfahrensdokumentation` | id, version, inhaltHash, zeitstempel | — |
+| `AusfallzeitEintrag` | id, startZeit, endZeit, ursache, bedienerId | — |
 | `DsFinVKArchivSatz` | id, transaktionId, csvRowJson, exportZeit | → Transaktion (immutable shadow) |
 
 ## Key Technical Decisions
@@ -158,3 +159,4 @@ Data layer        ← Room DAOs, repository impls, TseClientImpl, BonDrucker, Wo
 | TseOfflineBuffer + WorkManager | KassenSichV requires every Tx signed; network may be down 24h | Synchronous TSE call would block sale and violate SC-004 |
 | `DsFinVKArchivSatz` shadow table | DSFinV-K requires immutable export snapshot; original records may be updated (Storno) | Reading live rows at export time risks inconsistency if schema changes |
 | PreisregelEngine as pure module | Constitution: business logic separated from I/O; must be unit-tested without DB | Inline ViewModel logic untestable in isolation |
+| `AusfallzeitEintrag` entity | EC-06 + FR-016 require outage timestamps permanently logged; `AppStartupManager` records interval between last shutdown and current start | Logging at app-label level would be volatile and not GoBD-compliant |

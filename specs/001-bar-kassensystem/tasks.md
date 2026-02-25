@@ -46,21 +46,23 @@
 - [ ] T010 [P] Create domain models `Artikel.kt`, `SKU.kt`, `Preisregel.kt` in `app/src/main/.../domain/model/`
 - [ ] T011 [P] Create domain models `Tisch.kt`, `Bediener.kt`, `Schicht.kt` in `app/src/main/.../domain/model/`
 - [ ] T012 [P] Create domain models `Bon.kt`, `ZBon.kt`, `TseProtokollEintrag.kt` in `app/src/main/.../domain/model/`
+- [ ] T012a [P] Create domain model `AusfallzeitEintrag.kt` (id, startZeit: Instant, endZeit: Instant?, ursache: String, bedienerId: Long?) in `app/src/main/.../domain/model/`
 - [ ] T013 [P] Create `CentMath.kt` utility (Long arithmetic, HALF_UP rounding display) in `app/src/main/.../domain/`
 
 ### Room Database
 
 - [ ] T014 Create `TypeConverter.kt` (Instant↔Long, List/Map↔JSON) in `app/src/main/.../data/db/converter/`
-- [ ] T015 [P] Create Room `@Entity` classes for all 12 entities + `DsFinVKArchivSatz` in `app/src/main/.../data/db/entity/` (mirror domain models; use `Long` for all monetary fields)
-- [ ] T016 Create `KassenDatabase.kt` `@Database` (all 13 entity classes, WAL mode, `exportSchema=true`) in `app/src/main/.../data/db/`
+- [ ] T015 [P] Create Room `@Entity` classes for all 13 entities + `DsFinVKArchivSatz` in `app/src/main/.../data/db/entity/` (mirror domain models; `Schicht` includes `sollBestandInCent`/`istBestandInCent`; include `AusfallzeitEintrag`; use `Long` for all monetary fields)
+- [ ] T016 Create `KassenDatabase.kt` `@Database` (all 14 entity classes incl. `AusfallzeitEintrag`, WAL mode, `exportSchema=true`) in `app/src/main/.../data/db/`
 - [ ] T017 [P] Create `TransaktionDao.kt` + `TransaktionsPositionDao.kt` in `app/src/main/.../data/db/dao/`
 - [ ] T018 [P] Create `ArtikelDao.kt`, `SkuDao.kt`, `PreisregelDao.kt` in `app/src/main/.../data/db/dao/`
 - [ ] T019 [P] Create `TischDao.kt`, `BedienerDao.kt`, `SchichtDao.kt` in `app/src/main/.../data/db/dao/`
 - [ ] T020 [P] Create `BonDao.kt`, `ZBonDao.kt`, `TseProtokollEintragDao.kt` in `app/src/main/.../data/db/dao/`
+- [ ] T020a [P] Create `AusfallzeitEintragDao.kt` (insert, findAll, findSinceLastShutdown) in `app/src/main/.../data/db/dao/`
 
 ### Repository Interfaces & Implementations
 
-- [ ] T021 [P] Create repository interfaces `ITransaktionRepository`, `IArtikelRepository`, `ITischRepository` in `app/src/main/.../domain/repository/`
+- [ ] T021 [P] Create repository interfaces `ITransaktionRepository`, `IArtikelRepository`, `ITischRepository`, `IPreisregelRepository`, `IAusfallzeitRepository` in `app/src/main/.../domain/repository/`
 - [ ] T022 [P] Create repository interfaces `IBedienerRepository`, `ISchichtRepository`, `IBonRepository`, `IZBonRepository` in `app/src/main/.../domain/repository/`
 - [ ] T023 Implement `TransaktionRepository.kt` (atomic Room `@Transaction` save; enforce `locked` guard) in `app/src/main/.../data/repository/`
 - [ ] T024 [P] Implement `ArtikelRepository.kt`, `SkuRepository.kt` in `app/src/main/.../data/repository/`
@@ -70,16 +72,19 @@
 ### TSE Integration
 
 - [ ] T027 Create `TseClient.kt` interface (`startTransaction`, `updateTransaction`, `finishTransaction(type)`, `exportTar`) in `app/src/main/.../domain/repository/`
+- [ ] T027a [P] Create `IBonDrucker.kt` interface (`printBon(bon: Bon)`, `printZBon(zBon: ZBon)`, `printSchichtbericht(schicht: Schicht)`) in `app/src/main/.../domain/repository/`
 - [ ] T028 Implement `TseClientImpl.kt` Retrofit service targeting Deutsche Fiskal DFKA Cloud-TSE REST V2 in `app/src/main/.../data/hardware/`
 - [ ] T029 Implement `TseOfflineBuffer.kt`: Room-backed queue for pending TSE calls; exponential-backoff retry in `app/src/main/.../data/repository/`
 - [ ] T030 Create `TseOfflineWorker.kt` WorkManager `CoroutineWorker` that drains `TseOfflineBuffer` in `app/src/main/.../data/worker/`
+- [ ] T030a Create `AusfallzeitRepository.kt` implementing `IAusfallzeitRepository`; create `AppStartupManager.kt` that on every app launch records the outage interval (last-shutdown `Instant` from DataStore → `Instant.now()`) into `AusfallzeitEintragDao` per EC-06/FR-016 in `app/src/main/.../data/repository/` and `app/src/main/.../`
+- [ ] T030b Unit test `TseSignUseCaseTest`: online path signs via `TseClient`, offline path enqueues to `TseOfflineBuffer`, full buffer throws `TsePflichtException` in `app/src/test/.../domain/usecase/` — **MUST FAIL first**
 - [ ] T031 Add `TseSignUseCase.kt`: wrap every `Transaktion` save — sign via `TseClient`; on failure enqueue to `TseOfflineBuffer`; block if buffer full per KassenSichV §146a in `app/src/main/.../domain/usecase/`
 
 ### Hilt DI
 
 - [ ] T032 [P] Create `DatabaseModule.kt` Hilt module (provides `KassenDatabase`, all DAOs) in `app/src/main/.../di/`
 - [ ] T033 [P] Create `RepositoryModule.kt` Hilt module (binds interfaces → implementations) in `app/src/main/.../di/`
-- [ ] T034 [P] Create `NetworkModule.kt` Hilt module (provides Retrofit, `TseClientImpl`, `BonDrucker`) in `app/src/main/.../di/`
+- [ ] T034 [P] Create `NetworkModule.kt` Hilt module (provides Retrofit, `TseClientImpl`; binds `IBonDrucker` → `BonDruckerImpl`) in `app/src/main/.../di/`
 - [ ] T035 [P] Create `WorkerModule.kt` Hilt `@HiltWorker` bindings for `TseOfflineWorker`, `DsFinVKExportWorker` in `app/src/main/.../di/`
 
 ### UI Theme & Navigation
@@ -102,16 +107,20 @@
 
 - [ ] T039 [P] [US1] Unit test `TransaktionViewModelTest`: add/remove position, VAT split 7%/19%, total calculation in `app/src/test/.../ui/kasse/`
 - [ ] T040 [P] [US1] Integration test `TransaktionRepositoryTest` (in-memory Room): full save → lock → storno cycle in `app/src/androidTest/.../data/repository/`
+- [ ] T040a [P] [US1] Unit test `SaveTransaktionUseCaseTest`: cash/EC payment assembly, positions included, TSE sign triggered, total-in-cents correct in `app/src/test/.../domain/usecase/` — **MUST FAIL first**
+- [ ] T040b [P] [US1] Unit test `DiscardTransaktionUseCaseTest`: in-progress discard leaves zero Room records in `app/src/test/.../domain/usecase/` — **MUST FAIL first**
+- [ ] T041a [P] [US1] Unit test `StornoUseCaseTest`: TSE cancel sign called, linked StornoTransaktion persisted, throws `StornoNachBonException` when Bon exists for transaktionId in `app/src/test/.../domain/usecase/` — **MUST FAIL first**
 
 ### Implementation — US-1
 
+- [ ] T040c [US1] Create `DiscardTransaktionUseCase.kt`: clears in-memory `TransaktionViewModel` state; asserts no partial DB record persisted; enforces FR-004 (Buchungsabbruch verboten) in `app/src/main/.../domain/usecase/`
 - [ ] T041 [US1] Create `SaveTransaktionUseCase.kt` (assembles `Transaktion`, calls `TransaktionRepository.save`, then `TseSignUseCase`) in `app/src/main/.../domain/usecase/`
-- [ ] T042 [US1] Create `StornoUseCase.kt` (TSE `finishTransaction(type=CANCEL)`, create linked `StornoTransaktion`, guard if `Bon.isNachdruck`) in `app/src/main/.../domain/usecase/`
+- [ ] T042 [US1] Create `StornoUseCase.kt` (TSE `finishTransaction(type=CANCEL)`, create linked `StornoTransaktion`; throws `StornoNachBonException` if `BonDao.findByTransaktionId() != null` — storno blocked after any bon print per EC-02) in `app/src/main/.../domain/usecase/`
 - [ ] T043 [US1] Create `TransaktionViewModel.kt` (StateFlow UiState: positions, totals, VAT, payment mode) in `app/src/main/.../ui/kasse/`
 - [ ] T044 [US1] Build `KassenScreen.kt` Compose screen: split layout — left product grid (category tabs, search bar), right order list; touch targets ≥ 48dp in `app/src/main/.../ui/kasse/`
 - [ ] T045 [US1] Build `ProductGridItem.kt` and `OrderPositionItem.kt` composables with swipe-to-delete in `app/src/main/.../ui/kasse/`
 - [ ] T046 [US1] Build `PaymentDialog.kt` Compose dialog: cash (change calculation) and EC-extern modes; GwG guard for > 10 000 € in `app/src/main/.../ui/kasse/`
-- [ ] T047 [US1] Implement `BonDrucker.kt` ESC/POS adapter (TCP socket, printer IP from DataStore, all Pflichtfelder incl. TSE-Signatur, Kassennummer) in `app/src/main/.../data/hardware/`
+- [ ] T047 [US1] Implement `BonDruckerImpl.kt` implementing `IBonDrucker` — ESC/POS TCP socket adapter (printer IP from DataStore, all Pflichtfelder incl. TSE-Signatur, Kassennummer; Bluetooth path deferred to v2) in `app/src/main/.../data/hardware/`
 - [ ] T048 [US1] Create `PrintBonUseCase.kt` (fetch `Bon` from repo, format ESC/POS, call `BonDrucker`) in `app/src/main/.../domain/usecase/`
 
 **Checkpoint**: US-1 fully functional; standard transaction completes in < 30 s on device.
@@ -149,12 +158,12 @@
 
 ### Tests — US-3 (Write first, verify FAIL)
 
-- [ ] T056 [P] [US3] Unit test `ZBonAggregationTest`: correct totals, MwSt split, Storno exclusion, Training exclusion in `app/src/test/.../domain/usecase/`
+- [ ] T056 [P] [US3] Unit test `ZBonAggregationTest` / `GenerateZBonUseCaseTest`: correct totals, MwSt split, Entnahmen sum, Storno exclusion, Trainee exclusion, `locked` set on all included Transaktionen in `app/src/test/.../domain/usecase/`
 - [ ] T057 [P] [US3] Integration test `TagesabschlussTest` (in-memory Room): locked flag set on all Transaktionen after Z-Bon; write to locked throws in `app/src/androidTest/.../data/repository/`
 
 ### Implementation — US-3
 
-- [ ] T058 [US3] Create `GenerateZBonUseCase.kt`: aggregate all unlocked `Transaktion` since last `ZBon`; compute Gesamtumsatz, MwSt 7%/19%, Anzahl Buchungen/Stornos; persist `ZBon`; set `locked=true` on all included transactions in `app/src/main/.../domain/usecase/`
+- [ ] T058 [US3] Create `GenerateZBonUseCase.kt`: aggregate all unlocked `Transaktion` since last `ZBon`; compute Gesamtumsatz, MwSt 7%/19%, Entnahmen (from `EntnahmeDao`), Anzahl Buchungen/Stornos; persist `ZBon` (incl. `entnahmenInCent`); set `locked=true` on all included transactions in `app/src/main/.../domain/usecase/`
 - [ ] T059 [US3] Create `PrintZBonUseCase.kt` (format ESC/POS Z-Bon with all §146a Pflichtfelder, TSE-Seriennummer, Signatur) in `app/src/main/.../domain/usecase/`
 - [ ] T060 [US3] Create `TagesabschlussViewModel.kt` (StateFlow: open-tables warning, training-tx warning, Z-Bon preview, confirm flow) in `app/src/main/.../ui/abschluss/`
 - [ ] T061 [US3] Build `TagesabschlussScreen.kt` Compose screen: summary preview, admin-PIN override for open tables, confirm button in `app/src/main/.../ui/abschluss/`
@@ -177,7 +186,7 @@
 ### Implementation — US-4
 
 - [ ] T064 [US4] Create `PreisregelEngine.kt` pure Kotlin object: calculates final price for a SKU given `Instant` and ordered `List<Preisregel>` in `app/src/main/.../domain/engine/`
-- [ ] T065 [US4] Implement `PreisregelRepository.kt` + `IPreisregelRepository` interface in `app/src/main/.../data/repository/` and `domain/repository/`
+- [ ] T065 [US4] Implement `PreisregelRepository.kt` (implements `IPreisregelRepository` defined in Phase 2 T021) in `app/src/main/.../data/repository/`
 - [ ] T066 [US4] Wire `PreisregelEngine` into `TransaktionViewModel`: evaluate on every position add; show active-rule banner in `KassenScreen` in `app/src/main/.../ui/kasse/`
 - [ ] T067 [US4] Build `PreisregelAdminScreen.kt` Compose screen (PIN-protected): list, create, edit, delete rules; time-range picker in `app/src/main/.../ui/preisregel/`
 - [ ] T068 [US4] Create `PreisregelViewModel.kt` for admin CRUD in `app/src/main/.../ui/preisregel/`
@@ -200,8 +209,8 @@
 ### Implementation — US-5
 
 - [ ] T071 [US5] Create `BedienerAuthUseCase.kt` (SHA-256 PIN hash, role verification) in `app/src/main/.../domain/usecase/`
-- [ ] T072 [US5] Create `OpenSchichtUseCase.kt`, `CloseSchichtUseCase.kt` in `app/src/main/.../domain/usecase/`
-- [ ] T073 [US5] Create `SchichtViewModel.kt` (StateFlow: current Bediener, shift start time, shift summary) in `app/src/main/.../ui/schicht/`
+- [ ] T072 [US5] Create `OpenSchichtUseCase.kt`, `CloseSchichtUseCase.kt` (`CloseSchicht` accepts `sollBestandInCent` + `istBestandInCent` input and persists them immutably per US-5 AC-2) in `app/src/main/.../domain/usecase/`
+- [ ] T073 [US5] Create `SchichtViewModel.kt` (StateFlow: current Bediener, shift start time, Soll-/Ist-Bestand input fields, shift summary) in `app/src/main/.../ui/schicht/`
 - [ ] T074 [US5] Build `SchichtScreen.kt` Compose screen: PIN pad login, active-shift display, shift-close button, handover report trigger in `app/src/main/.../ui/schicht/`
 - [ ] T075 [US5] Create `PrintSchichtberichtUseCase.kt` (ESC/POS shift handover: per-operator totals, start/end times) in `app/src/main/.../domain/usecase/`
 - [ ] T076 [US5] Thread current `Bediener` through `TransaktionViewModel`; set `IS_TRAINING` flag for Trainee role in `app/src/main/.../ui/kasse/`
@@ -266,7 +275,7 @@
 - [ ] T089 Create `DsFinVKExportUseCase.kt`: map locked Transaktionen → DSFinV-K CSV rows → `DsFinVKArchivSatz` shadow records in `app/src/main/.../domain/usecase/`
 - [ ] T090 Create `DsFinVKExportWorker.kt` WorkManager one-shot: run `DsFinVKExportUseCase`, then call `TseClient.exportTar()`, zip all, write to `Documents/DSFinV-K/<date>/` in `app/src/main/.../data/worker/`
 - [ ] T091 Build `ExportScreen.kt` Compose screen: manual trigger, progress indicator, last-export info, error log in `app/src/main/.../ui/export/`
-- [ ] T092 Auto-trigger `DsFinVKExportWorker` after successful Z-Bon in `GenerateZBonUseCase` in `app/src/main/.../domain/usecase/`
+- [ ] T092 Auto-trigger `DsFinVKExportWorker` after successful Z-Bon in `GenerateZBonUseCase` in `app/src/main/.../domain/usecase/` (modifies `GenerateZBonUseCase.kt` from T058 — depends on T058)
 
 **Checkpoint**: Export zip produced; `dfka-validator.jar` passes with 0 errors for test dataset.
 
@@ -276,12 +285,13 @@
 
 **Goal**: In-app Verfahrensdokumentation viewer and Kassennachschau read-only mode (SC-007 < 5 min).
 
-- [ ] T093 Bundle `verfahrensdokumentation.pdf` in `app/src/main/assets/`; create `VerfahrensdokumentationScreen.kt` PDF viewer composable in `app/src/main/.../ui/settings/`
+- [ ] T093 Create `VerfahrensdokumentationScreen.kt`: display active `Verfahrensdokumentation` Room record (version, zeitstempel, Änderungsprotokoll entries); seed initial record on first launch; bundle static `verfahrensdokumentation-base.pdf` in `app/src/main/assets/` as human-readable reference; satisfies FR-016 (dynamic with Programmierungsänderungen) in `app/src/main/.../ui/settings/`
 - [ ] T094 Create `KassennachschauScreen.kt` read-only deep-link mode (special admin PIN): surfaces all audit data — Transaktionen, Bons, Z-Bons, TSE entries, DSFinV-K export list in `app/src/main/.../ui/settings/`
 - [ ] T095 Add `KassennachschauViewModel.kt` with combined audit query (all data in single StateFlow) in `app/src/main/.../ui/settings/`
-- [ ] T096 Add GwG guard in `PaymentDialog.kt`: hard-block Barzahlung > 1 000 000 ct (10 000 €) with non-dismissible dialog referencing GwG §10 (edge case EC-05) in `app/src/main/.../ui/kasse/`
 
 **Checkpoint**: Kassennachschau mode usable end-to-end in < 5 min (SC-007).
+
+- [ ] T096a [P] Create `KassenmeldungScreen.kt`: read-only display and PDF/text export of all FR-015 fields (Kassensystem-Art, Seriennummer, Anschaffungsdatum, TSE-Art, Zertifizierungsnummer, Betriebsstätte); accessible from Settings in `app/src/main/.../ui/settings/`
 
 ---
 
@@ -299,6 +309,7 @@
 - [ ] T104 [P] Add Compose UI test `KassenHappyPathTest`: US-1 full transaction < 30 s (SC-001) in `app/src/androidTest/.../ui/`
 - [ ] T105 [P] Add Compose UI test `ZBonFlowTest`: US-3 end-to-end Z-Bon and lock verification in `app/src/androidTest/.../ui/`
 - [ ] T106 [P] Add Compose UI test `KassennachschauTest`: audit mode operational in < 5 min (SC-007) in `app/src/androidTest/.../ui/`
+- [ ] T106a [P] Implement first-use onboarding overlay in `KassenScreen` (3-step tooltip walkthrough for new Bediener); validate SC-005 (95 % first-use success) via manual usability checklist in `app/src/main/.../ui/kasse/`
 
 **Checkpoint**: All tests green; `dfka-validator.jar` passes; manual smoke test with Deutsche Fiskal sandbox TSE complete.
 
