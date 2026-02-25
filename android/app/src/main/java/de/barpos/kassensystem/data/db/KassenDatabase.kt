@@ -35,20 +35,19 @@ import de.barpos.kassensystem.data.db.entity.ZBonEntity
 
 @Database(
     entities = [
+        ArtikelEntity::class,
+        AusfallzeitEintragEntity::class,
+        BedienerEntity::class,
+        BonEntity::class,
+        DsFinVKArchivSatzEntity::class,
+        PreisregelEntity::class,
+        SchichtEntity::class,
+        SkuEntity::class,
+        TischEntity::class,
         TransaktionEntity::class,
         TransaktionsPositionEntity::class,
-        ArtikelEntity::class,
-        SkuEntity::class,
-        PreisregelEntity::class,
-        TischEntity::class,
-        BedienerEntity::class,
-        SchichtEntity::class,
-        BonEntity::class,
-        ZBonEntity::class,
         TseProtokollEintragEntity::class,
-        VerfahrensdokumentationEntity::class,
-        AusfallzeitEintragEntity::class,
-        DsFinVKArchivSatzEntity::class
+        ZBonEntity::class
     ],
     version = 1,
     exportSchema = true
@@ -56,20 +55,19 @@ import de.barpos.kassensystem.data.db.entity.ZBonEntity
 @TypeConverters(TypeConverter::class)
 abstract class KassenDatabase : RoomDatabase() {
 
+    abstract fun artikelDao(): ArtikelDao
+    abstract fun ausfallzeitEintragDao(): AusfallzeitEintragDao
+    abstract fun bedienerDao(): BedienerDao
+    abstract fun bonDao(): BonDao
+    abstract fun dsFinVKArchivSatzDao(): DsFinVKArchivSatzDao
+    abstract fun preisregelDao(): PreisregelDao
+    abstract fun schichtDao(): SchichtDao
+    abstract fun skuDao(): SkuDao
+    abstract fun tischDao(): TischDao
     abstract fun transaktionDao(): TransaktionDao
     abstract fun transaktionsPositionDao(): TransaktionsPositionDao
-    abstract fun artikelDao(): ArtikelDao
-    abstract fun skuDao(): SkuDao
-    abstract fun preisregelDao(): PreisregelDao
-    abstract fun tischDao(): TischDao
-    abstract fun bedienerDao(): BedienerDao
-    abstract fun schichtDao(): SchichtDao
-    abstract fun bonDao(): BonDao
-    abstract fun zBonDao(): ZBonDao
     abstract fun tseProtokollEintragDao(): TseProtokollEintragDao
-    abstract fun verfahrensdokumentationDao(): VerfahrensdokumentationDao
-    abstract fun ausfallzeitEintragDao(): AusfallzeitEintragDao
-    abstract fun dsFinVKArchivSatzDao(): DsFinVKArchivSatzDao
+    abstract fun zBonDao(): ZBonDao
 
     companion object {
         const val DATABASE_NAME = "kassen_db"

@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import de.barpos.kassensystem.ui.tischplan.TischplanScreen
+import de.barpos.kassensystem.ui.bestellung.BestellungScreen
 
 /**
  * T037 — Root NavGraph.
@@ -20,21 +21,31 @@ fun KassenNavGraph(navController: NavHostController) {
         startDestination = Screen.Tischplan.route
     ) {
 
-        composable(Screen.Tischplan.route) {
+        composable(KassenNavRoutes.TISCHPLAN_ROUTE) {
             TischplanScreen(
-                onTischClick = { tischId ->
-                    navController.navigate(Screen.Bestellung.withArgs(tischId))
+                onNavigateToBestellung = { tischId, tischNummer ->
+                    navController.navigate("${KassenNavRoutes.BESTELLUNG_ROOT}/$tischId/$tischNummer")
                 }
             )
         }
 
         composable(
-            route = Screen.Bestellung.ROUTE,
-            arguments = listOf(navArgument("tischId") { type = NavType.LongType })
-        ) { backStack ->
-            val tischId = backStack.arguments?.getLong("tischId") ?: 0L
-            PlaceholderScreen("Bestellung Tisch $tischId (US-2)")
+            route = KassenNavRoutes.BESTELLUNG_ROUTE,
+            arguments = listOf(
+                navArgument(KassenNavArgs.TISCH_ID_ARG) { type = NavType.LongType },
+                navArgument(KassenNavArgs.TISCH_NUMMER_ARG) { type = NavType.StringType }
+            )
+        ) {
+            BestellungScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
+
+        composable(KassenNavRoutes.PLATZHALTER_ROUTE) {
+            PlaceholderScreen(text = "Platzhalter")
+        }
+    }
+}
 
         composable(
             route = Screen.Zahlung.ROUTE,
@@ -72,4 +83,16 @@ fun KassenNavGraph(navController: NavHostController) {
             PlaceholderScreen("Systemausfall bestätigen (EC-06)")
         }
     }
+}
+
+object KassenNavArgs {
+    const val TISCH_ID_ARG = "tischId"
+    const val TISCH_NUMMER_ARG = "tischNummer"
+}
+
+object KassenNavRoutes {
+    const val TISCHPLAN_ROUTE = "tischplan"
+    const val BESTELLUNG_ROOT = "bestellung"
+    const val BESTELLUNG_ROUTE = "$BESTELLUNG_ROOT/{${KassenNavArgs.TISCH_ID_ARG}}/{${KassenNavArgs.TISCH_NUMMER_ARG}}"
+    const val PLATZHALTER_ROUTE = "platzhalter"
 }
