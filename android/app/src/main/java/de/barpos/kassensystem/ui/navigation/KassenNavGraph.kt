@@ -6,7 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import de.barpos.kassensystem.ui.placeholder.PlaceholderScreen
+import de.barpos.kassensystem.ui.tischplan.TischplanScreen
 
 /**
  * T037 — Root NavGraph.
@@ -21,7 +21,11 @@ fun KassenNavGraph(navController: NavHostController) {
     ) {
 
         composable(Screen.Tischplan.route) {
-            PlaceholderScreen("Tischplan (US-1)")
+            TischplanScreen(
+                onTischClick = { tischId ->
+                    navController.navigate(Screen.Bestellung.withArgs(tischId))
+                }
+            )
         }
 
         composable(
