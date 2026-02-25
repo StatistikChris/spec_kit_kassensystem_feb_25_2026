@@ -1,0 +1,41 @@
+# Android / Gradle
+.gradle/
+build/
+out/
+*.class
+*.jar
+*.aar
+*.ap_
+local.properties
+*.iml
+*.ipr
+*.iws
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+*.so
+**/.DS_Store
+Thumbs.db
+
+# Kotlin
+*.kotlin_module
+
+# Release keystore (never commit)
+*.jks
+*.keystore
+
+# Environment / secrets
+.env
+.env.*
+secrets.properties
+
+# Android Studio
+.navigation/
+gradle-wrapper.jar
+
+# Logs
+*.log
+
+# Test results
+test-results/
